@@ -1,0 +1,10 @@
+#!/bin/sh
+
+USERDB="/etc/dovecot/users"
+
+if [ ! -f "$USERDB" ]; then
+    echo "$USERDB not exist or not a file!"
+    exit 1
+fi
+
+awk -F':' '{print $1}' $USERDB
