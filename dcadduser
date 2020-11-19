@@ -1,0 +1,69 @@
+#!/bin/sh
+
+USERDB="/etc/dovecot/users"
+
+check_user()
+{
+    USERNAME=`echo "$USERNAME"|awk '{print tolower($0)}'` #to lowercase
+    
+    if [ ! -f "$USERDB" ];then
+	return;
+    fi
+    
+    for V in $(awk -F':' '{print $1}' "$USERDB")
+    do
+	V=`echo "$V"|awk '{print tolower($0)}' ` #to lowercase
+	
+	if [ "$USERNAME" == "$V" ]; then
+	    echo "User exist!"
+	    exit 1
+	fi
+    done
+}
+
+if [ "$1" = "--help" -o "$1" = "-h" ];then
+    echo "Use "`basename $0` " <username> <password>"
+    echo "<username> - username and domain (e.g. user@example.org)"
+    echo "<password> - password"
+    echo
+    echo "If no parameters, script running in interactive mode"
+    exit 0
+fi
+
+if [ "x$1" = "x" -o "x$2" = "x" ];then
+    #interactive mode
+    read -p 'Username: ' USERNAME
+    check_user
+    read -sp 'Password: ' P1
+    echo
+    read -sp 'Repeat password: ' P2
+    echo
+    
+    if [ -z "$USERNAME" ]; then
+	echo "Username not entered!"
+	exit 1
+    fi
+    
+    if [ -z "$P1" ]; then
+	echo "Password not entered!"
+	exit 1
+    fi
+    
+    if [ -z "$P2" ]; then
+	echo "Password not entered!"
+	exit 1
+    fi
+    
+    if [ "$P1" != "$P2" ]; then
+	echo "Passwords do not match!"
+	exit 1
+    fi
+    
+    PASSWORD="$P1"
+else
+    USERNAME="$1"
+    check_user
+    PASSWORD="$2"
+fi
+
+echo $USERNAME:$(doveadm pw -s ssha512 -p $PASSWORD):::::: >> $USERDB
