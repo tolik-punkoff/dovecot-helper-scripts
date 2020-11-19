@@ -1,0 +1,76 @@
+#!/bin/sh
+
+USERDB="/etc/dovecot/users"
+
+print_help() #$1 - script basename
+{
+    echo "Use $1 <username>"
+    echo "<username> - Username in $USERDB"
+    exit 0
+}
+
+ask_yn() #$1 - question
+{
+    echo -n "$1 [Y/N]: "
+    while [ 1 -eq 1 ];do
+	read -s -n1
+	
+	case "$REPLY" in
+	    [yY])
+		echo
+		return 0
+	    ;;
+	    [nN])
+		echo
+		return 1
+	    ;;
+	esac
+    done
+}
+
+if [ -z "$1" ]; then
+    print_help `basename $0`
+fi
+if [ "$1" == "--help" -o "$1" == "-h" ]; then
+    print_help `basename $0`
+fi
+if [ ! -f "$USERDB" ]; then
+    echo "$USERDB not exist or not a file!"
+    exit 1
+fi
+
+USERNAME=`echo $1|awk '{print tolower($0)}'` #to lowercase
+
+FOUND=0
+MODIFED=0
+TMPFILE=`cat "/dev/urandom"|tr -dc 'a-zA-Z0-9'|head -c 10`
+TMPFILE="/tmp/dcu$TMPFILE.tmp"
+
+for V in $(cat "$USERDB"); do
+    
+    DBNAME=`echo $V|awk -F':' '{print tolower($1)}'` #to lowercase
+    
+    if [ "$USERNAME" == "$DBNAME" ]; then #username found
+	FOUND=1 #set found flag
+	ask_yn "Delete user $DBNAME?"
+	if [ "$?" -eq 0 ];then #user answer Yes, delete user
+	    MODIFED=1
+	    #no copy user record
+	else
+	    echo "$V" >>$TMPFILE #save user to temp file
+	fi
+    else
+	echo "$V" >>$TMPFILE #copy other user to temp file
+    fi
+
+done
+
+if [ "$MODIFED" -eq 1 ];then #file modifed
+    cp "$USERDB" "$USERDB-" #backup users file
+    cp "$TMPFILE" "$USERDB" #replace users file to temp file
+fi
+if [ "$FOUND" -eq 0 ];then
+    echo "User not found!"
+fi
+
+rm "$TMPFILE"
