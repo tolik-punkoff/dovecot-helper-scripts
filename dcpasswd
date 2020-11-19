@@ -1,0 +1,85 @@
+#!/bin/sh
+
+USERDB="/etc/dovecot/users"
+PASSWORD=""
+
+print_help() #$1 - script basename
+{
+    echo "Use $1 <username>"
+    echo "<username> - Username in $USERDB"
+    echo "[password] - New password"
+    exit 0
+}
+
+change_pass()
+{
+    if [ -n "$PASSWORD" ]; then #password set
+	return 0
+    fi
+    
+    read -sp 'New password: ' P1
+    echo
+    read -sp 'Repeat new password: ' P2
+    echo
+    
+    if [ "x$P1" == "x" -o "x$P2" == "x" ];then
+	echo "Password not entered!"
+	return 1
+    fi
+    
+    if [ "$P1" != "$P2" ]; then
+	echo "Passwords do not match!"
+	return 1
+    fi
+    
+    PASSWORD="$P1"
+    return 0
+}
+
+if [ -z "$1" ]; then
+    print_help `basename $0`
+fi
+if [ "$1" == "--help" -o "$1" == "-h" ]; then
+    print_help `basename $0`
+fi
+if [ ! -f "$USERDB" ]; then
+    echo "$USERDB not exist or not a file!"
+    exit 1
+fi
+
+USERNAME=`echo $1|awk '{print tolower($0)}'` #to lowercase
+PASSWORD="$2"
+
+FOUND=0
+MODIFED=0
+TMPFILE=`cat "/dev/urandom"|tr -dc 'a-zA-Z0-9'|head -c 10`
+TMPFILE="/tmp/dcu$TMPFILE.tmp"
+
+for V in $(cat "$USERDB"); do
+    
+    DBNAME=`echo $V|awk -F':' '{print tolower($1)}'` #to lowercase
+    
+    if [ "$USERNAME" == "$DBNAME" ]; then #username found
+	FOUND=1 #set found flag
+	change_pass
+	if [ "$?" -eq 0 ];then #OK, change pass
+	    echo $USERNAME:$(doveadm pw -s ssha512 -p $PASSWORD):::::: >> $TMPFILE
+	    MODIFED=1
+	else #password problem
+	    echo "$V" >>$TMPFILE #copy not changed user to temp file
+	fi
+    else
+	echo "$V" >>$TMPFILE #copy other user to temp file
+    fi
+
+done
+
+if [ "$MODIFED" -eq 1 ];then #file modifed
+    cp "$USERDB" "$USERDB-" #backup users file
+    cp "$TMPFILE" "$USERDB" #replace users file to temp file
+fi
+if [ "$FOUND" -eq 0 ];then
+    echo "User not found!"
+fi
+
+rm "$TMPFILE"
