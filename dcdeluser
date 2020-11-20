@@ -43,8 +43,7 @@ USERNAME=`echo $1|awk '{print tolower($0)}'` #to lowercase
 
 FOUND=0
 MODIFED=0
-TMPFILE=`cat "/dev/urandom"|tr -dc 'a-zA-Z0-9'|head -c 10`
-TMPFILE="/tmp/dcu$TMPFILE.tmp"
+TMPFILE=`mktemp`
 
 for V in $(cat "$USERDB"); do
     
