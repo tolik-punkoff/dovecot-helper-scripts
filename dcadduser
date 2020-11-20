@@ -65,5 +65,6 @@ else
     check_user
     PASSWORD="$2"
 fi
+cp "$USERDB" "$USERDB-" #backup file before user add
 
 echo $USERNAME:$(doveadm pw -s ssha512 -p $PASSWORD):::::: >> $USERDB
