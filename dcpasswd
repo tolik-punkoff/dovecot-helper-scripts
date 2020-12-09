@@ -2,6 +2,7 @@
 
 USERDB="/etc/dovecot/users"
 PASSWORD=""
+DOMAIN="" #set this variable for adding domain after username
 
 print_help() #$1 - script basename
 {
@@ -47,7 +48,11 @@ if [ ! -f "$USERDB" ]; then
     exit 1
 fi
 
-USERNAME=`echo $1|awk '{print tolower($0)}'` #to lowercase
+USERNAME="$1"
+if [ -n "$DOMAIN" ];then #add default domain if set this
+    USERNAME="$USERNAME@$DOMAIN"
+fi
+USERNAME=`echo $USERNAME|awk '{print tolower($0)}'` #to lowercase
 PASSWORD="$2"
 
 FOUND=0

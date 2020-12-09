@@ -1,9 +1,13 @@
 #!/bin/sh
 
 USERDB="/etc/dovecot/users"
+DOMAIN="" #set this variable for adding domain after username
 
 check_user()
 {
+    if [ -n "$DOMAIN" ];then #add default domain if set this
+	USERNAME="$USERNAME@$DOMAIN"
+    fi
     USERNAME=`echo "$USERNAME"|awk '{print tolower($0)}'` #to lowercase
     
     if [ ! -f "$USERDB" ];then

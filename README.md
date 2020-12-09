@@ -24,3 +24,9 @@ Example: `dcpasswd paulzovatel@example.org nEw!pAssW0Rd` or `dcpasswd paulzovate
 If run this script without `[new_password]` parameter, new password will be requested in interactive mode.
 
 ###### dclistuser - print list users from Dovecot passwd-file
+
+##### v 0.2
+
+Into scripts `dcadduser`, `dcdeluser` and `dcpasswd` added variable DOMAIN.
+
+Set this variable for adding `@` and domain name after username (e.g. `DOMAIN="example.org"`)
